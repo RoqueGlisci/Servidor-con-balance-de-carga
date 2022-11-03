@@ -4,12 +4,16 @@ import { Server as Socket } from "socket.io";
 import infoRoutes from "./routes/infoRoutes.js";
 import fakeProdsRoutes from "./routes/fakeProdsRoutes.js";
 import randomGenRoutes from "./routes/randomGenRoutes.js";
-
+import compression from "compression";
 //--------------------------------------------
 // instancio servidor, socket y api
 const app = express();
 export const httpServer = new HttpServer(app);
 const io = new Socket(httpServer);
+
+//--------------------------------------------
+// agrego middleware de compresion
+app.use(compression());
 
 //--------------------------------------------
 // configuro el socket
@@ -21,6 +25,11 @@ socketConfig(io);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
+
+//--------------------------------------------
+// agrego middleware logger para todas las rutas
+import * as loggerMiddleware from "./middleWares/loggerMiddleware.js";
+app.use(loggerMiddleware.allRoutes);
 
 //--------------------------------------------
 // configuro sesion
@@ -68,6 +77,7 @@ app.use("/info", infoRoutes);
 // agrego la ruta de la api generadora de nros randoms
 app.use("/api/randoms", randomGenRoutes);
 
-
-
-
+app.get("*", loggerMiddleware.notImplementedRoutes, (req,res)=>{
+  const errorMsg = `Ruta: ${req.url}, metodo: ${req.method} NO IMPLEMENTADOS`;
+  res.send(errorMsg)
+})
